@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import '../../../../features/auth/presentation/pages/login_page.dart';
+import '../../../../features/food_tracking/presentation/pages/food_tracking_page.dart';
+import '../../../../features/statistics/presentation/pages/statistics_page.dart';
+import '../../../../features/profile/presentation/pages/profile_page.dart';
 import '../widgets/calorie_ring_card.dart';
 import '../widgets/macro_nutrient_card.dart';
 
@@ -118,22 +121,26 @@ class _HomePageState extends State<HomePage> {
     final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
 
     try {
+      // Listener tanpa filter tanggal - lebih reliable untuk real-time
       _foodLogsSubscription = Supabase.instance.client
           .from('food_logs')
           .stream(primaryKey: ['id'])
           .eq('user_id', userId)
           .listen(
             (List<Map<String, dynamic>> data) {
+              print('🔔 Food logs stream triggered: ${data.length} items');
               _updateDailyCalories(userId, startOfDay, endOfDay);
             },
             onError: (e) {
-              print('Error in food logs stream: $e');
+              print('❌ Error in food logs stream: $e');
             },
           );
 
+      print('✅ Listener setup complete');
+      // Initial load
       _updateDailyCalories(userId, startOfDay, endOfDay);
     } catch (e) {
-      print('Error setting up food logs listener: $e');
+      print('❌ Error setting up food logs listener: $e');
     }
   }
 
@@ -143,188 +150,245 @@ class _HomePageState extends State<HomePage> {
     DateTime endOfDay,
   ) async {
     try {
+      // Format dates untuk query
+      final todayStr = startOfDay.toIso8601String().split(
+        'T',
+      )[0]; // YYYY-MM-DD only
+
+      print('📊 Querying calories: user=$userId, date=$todayStr');
+
+      // Query dengan casting date saja (ignore timezone)
       final response = await Supabase.instance.client
           .from('food_logs')
-          .select('calories')
+          .select('id, food_name, calories, created_at')
           .eq('user_id', userId)
-          .gte('created_at', startOfDay.toIso8601String())
-          .lte('created_at', endOfDay.toIso8601String());
+          .filter('created_at', 'gte', '${todayStr}T00:00:00')
+          .filter('created_at', 'lte', '${todayStr}T23:59:59');
 
-      if (mounted && response is List) {
+      print('📋 Query response: $response');
+
+      if (mounted) {
         int total = 0;
         for (var log in response) {
-          total += (log['calories'] as int? ?? 0);
+          final calories = log['calories'];
+          final foodName = log['food_name'] ?? 'Unknown';
+
+          if (calories != null) {
+            int cal = 0;
+            if (calories is int) {
+              cal = calories;
+            } else if (calories is double) {
+              cal = calories.toInt();
+            } else if (calories is String) {
+              cal = int.tryParse(calories) ?? 0;
+            }
+            total += cal;
+            print('  → $foodName: $cal kal');
+          }
         }
 
-        setState(() {
-          _calorieToday = total;
-        });
+        print('✅ Total kalori hari ini: $total');
+
+        if (mounted) {
+          setState(() {
+            _calorieToday = total;
+          });
+        }
       }
     } catch (e) {
-      print('Error updating daily calories: $e');
+      print('❌ Error updating daily calories: $e');
     }
+  }
+
+  void _refreshCalories() {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
+
+    _updateDailyCalories(userId, startOfDay, endOfDay);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFC),
-      body: Column(
-        children: [
-          // HEADER
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF2E7D32),
-                  const Color(0xFF43A047),
-                ],
-              ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.green.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+      body: Expanded(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // HEADER
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [const Color(0xFF2E7D32), const Color(0xFF43A047)],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Halo, $_userName 👋",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 24,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Halo, $_userName 👋",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 24,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Mari jaga kesehatan Anda",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "Mari jaga kesehatan Anda",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 15,
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            onPressed: () async {
+                              await Supabase.instance.client.auth.signOut();
+                              if (mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginPage(),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
                       ],
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        onPressed: () async {
-                          await Supabase.instance.client.auth.signOut();
-                          if (mounted) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const LoginPage(),
+                    const SizedBox(height: 24),
+                    if (_isLoadingProfile)
+                      const Card(
+                        child: Padding(
+                          padding: EdgeInsets.all(28),
+                          child: Column(
+                            children: [
+                              SizedBox(height: 60),
+                              CircularProgressIndicator(),
+                              SizedBox(height: 16),
+                              Text('Memuat data profil...'),
+                              SizedBox(height: 60),
+                            ],
+                          ),
+                        ),
+                      )
+                    else if (_errorMessage != null)
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(28),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.warning_rounded,
+                                color: Colors.orange,
+                                size: 40,
                               ),
-                            );
-                          }
-                        },
+                              const SizedBox(height: 16),
+                              Text(_errorMessage!),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _fetchUserProfile,
+                                child: const Text('Coba Lagi'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      CalorieRingCard(
+                        current: _calorieToday,
+                        target: _targetCalorie,
                       ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                if (_isLoadingProfile)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(28),
-                      child: Column(
-                        children: [
-                          SizedBox(height: 60),
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('Memuat data profil...'),
-                          SizedBox(height: 60),
-                        ],
-                      ),
-                    ),
-                  )
-                else if (_errorMessage != null)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(28),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.warning_rounded, color: Colors.orange, size: 40),
-                          const SizedBox(height: 16),
-                          Text(_errorMessage!),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _fetchUserProfile,
-                            child: const Text('Coba Lagi'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  CalorieRingCard(
-                    current: _calorieToday,
-                    target: _targetCalorie,
-                  ),
-              ],
-            ),
-          ),
-
-          // BODY
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const MacroNutrientRow(),
-                  const SizedBox(height: 32),
-                  _buildWaterTracker(),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text(
-                        'Catat Makanan',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
               ),
-            ),
+
+              // BODY
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 32,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const MacroNutrientRow(),
+                    const SizedBox(height: 32),
+                    _buildWaterTracker(),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          // Push to FoodTrackingPage
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FoodTrackingPage(),
+                            ),
+                          );
+                          // Refresh kalori setelah kembali
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            _refreshCalories();
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: const Text(
+                          'Catat Makanan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
 
       bottomNavigationBar: Container(
@@ -344,7 +408,21 @@ class _HomePageState extends State<HomePage> {
           elevation: 0,
           selectedIndex: _selectedNavIndex,
           onDestinationSelected: (index) {
-            setState(() => _selectedNavIndex = index);
+            if (index == 1) {
+              // Navigate to Statistics
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StatisticsPage()),
+              );
+            } else if (index == 2) {
+              // Navigate to Profile
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              );
+            } else {
+              setState(() => _selectedNavIndex = index);
+            }
           },
           destinations: const [
             NavigationDestination(
@@ -409,9 +487,8 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Text(
                           "Minum Air Putih",
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -434,8 +511,9 @@ class _HomePageState extends State<HomePage> {
                   value: percentage,
                   minHeight: 12,
                   backgroundColor: Colors.blue.shade100,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(Color(0xFF1976D2)),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Color(0xFF1976D2),
+                  ),
                 ),
               ),
             ],
