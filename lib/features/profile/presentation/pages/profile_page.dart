@@ -73,7 +73,39 @@ class _ProfilePageState extends State<ProfilePage> {
         _weight = (response['weight'] as num?)?.toDouble() ?? 70.0;
         _height = (response['height'] as num?)?.toDouble() ?? 170.0;
         _gender = response['gender'] ?? 'Laki-laki';
-        _activityLevel = response['activity_level'] ?? 'sedentary';
+
+        // Normalize activity level - convert number to string if needed
+        var activityValue = response['activity_level'] ?? 'sedentary';
+        if (activityValue is num) {
+          // Convert numeric activity multiplier back to string key
+          final doubleValue = activityValue.toDouble();
+          final multiplierMap = {
+            1.2: 'sedentary',
+            1.375: 'light',
+            1.55: 'moderate',
+            1.725: 'very_active',
+          };
+          // Find closest match for floating point comparison
+          String foundKey = 'sedentary';
+          multiplierMap.forEach((key, value) {
+            if ((key - doubleValue).abs() < 0.01) {
+              foundKey = value;
+            }
+          });
+          _activityLevel = foundKey;
+        } else {
+          _activityLevel = activityValue.toString().trim();
+          // Ensure it's one of valid keys
+          if (![
+            'sedentary',
+            'light',
+            'moderate',
+            'very_active',
+          ].contains(_activityLevel)) {
+            _activityLevel = 'sedentary';
+          }
+        }
+
         _targetCalorie = response['target_calorie'] ?? 2000;
 
         _nameController.text = _fullName;
@@ -120,49 +152,100 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _saveProfile() async {
     try {
+      // Validasi input
+      if (_nameController.text.isEmpty) {
+        _showError('Nama tidak boleh kosong');
+        return;
+      }
+
+      final age = int.tryParse(_ageController.text);
+      if (age == null || age < 1 || age > 150) {
+        _showError('Umur harus angka antara 1-150');
+        return;
+      }
+
+      final weight = double.tryParse(_weightController.text);
+      if (weight == null || weight < 20 || weight > 300) {
+        _showError('Berat harus angka antara 20-300 kg');
+        return;
+      }
+
+      final height = double.tryParse(_heightController.text);
+      if (height == null || height < 100 || height > 250) {
+        _showError('Tinggi harus angka antara 100-250 cm');
+        return;
+      }
+
+      final targetCalorie = int.tryParse(_targetCalorieController.text);
+      if (targetCalorie == null ||
+          targetCalorie < 500 ||
+          targetCalorie > 10000) {
+        _showError('Target kalori harus angka antara 500-10000 kcal');
+        return;
+      }
+
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) return;
 
       await Supabase.instance.client
           .from('user_profiles')
           .update({
-            'full_name': _nameController.text,
-            'age': int.parse(_ageController.text),
-            'weight': double.parse(_weightController.text),
-            'height': double.parse(_heightController.text),
+            'full_name': _nameController.text.trim(),
+            'age': age,
+            'weight': weight,
+            'height': height,
             'gender': _gender,
             'activity_level': _activityLevel,
-            'target_calorie': int.parse(_targetCalorieController.text),
+            'target_calorie': targetCalorie,
           })
           .eq('id', userId);
 
       setState(() {
-        _fullName = _nameController.text;
-        _age = int.parse(_ageController.text);
-        _weight = double.parse(_weightController.text);
-        _height = double.parse(_heightController.text);
-        _targetCalorie = int.parse(_targetCalorieController.text);
+        _fullName = _nameController.text.trim();
+        _age = age;
+        _weight = weight;
+        _height = height;
+        _targetCalorie = targetCalorie;
+        _calculateTDEE();
         _isEditing = false;
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Profil berhasil disimpan'),
+            content: Text('✅ Profil berhasil disimpan'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menyimpan profil: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showError('Gagal menyimpan profil: $e');
     }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ $message'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _cancelEdit() {
+    // Reset form ke nilai sebelumnya
+    setState(() {
+      _nameController.text = _fullName;
+      _ageController.text = _age.toString();
+      _weightController.text = _weight.toStringAsFixed(1);
+      _heightController.text = _height.toStringAsFixed(1);
+      _targetCalorieController.text = _targetCalorie.toString();
+      _isEditing = false;
+    });
   }
 
   Future<void> _logout() async {
@@ -250,15 +333,22 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Profil Saya'),
         elevation: 0,
         actions: [
-          if (_isEditing)
+          if (_isEditing) ...[
+            TextButton(
+              onPressed: _cancelEdit,
+              child: const Text('Batal', style: TextStyle(color: Colors.white)),
+            ),
             TextButton(
               onPressed: _saveProfile,
               child: const Text(
                 'Simpan',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            )
-          else
+            ),
+          ] else
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () => setState(() => _isEditing = true),
@@ -492,13 +582,29 @@ class _ProfilePageState extends State<ProfilePage> {
           TextField(
             controller: controller,
             keyboardType: keyboardType,
+            onChanged: (value) {
+              // Recalculate TDEE when physical data changes
+              if (label.contains('Umur') ||
+                  label.contains('Berat') ||
+                  label.contains('Tinggi')) {
+                _updateTDEEPreview();
+              }
+            },
             decoration: InputDecoration(
               hintText: label,
               filled: true,
-              fillColor: Colors.grey.shade100,
+              fillColor: Colors.blue.shade50,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -513,6 +619,7 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
             ),
             child: Text(
               value,
@@ -521,6 +628,35 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
       ],
     );
+  }
+
+  void _updateTDEEPreview() {
+    // Parse current input values
+    final age = int.tryParse(_ageController.text) ?? _age;
+    final weight = double.tryParse(_weightController.text) ?? _weight;
+    final height = double.tryParse(_heightController.text) ?? _height;
+
+    // Recalculate TDEE with temporary values
+    double bmr;
+    if (_gender == 'Laki-laki') {
+      bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+    } else {
+      bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+    }
+
+    final activityMultipliers = {
+      'sedentary': 1.2,
+      'light': 1.375,
+      'moderate': 1.55,
+      'very_active': 1.725,
+    };
+
+    final multiplier = activityMultipliers[_activityLevel] ?? 1.2;
+    final tdee = (bmr * multiplier).round();
+
+    setState(() {
+      _calculatedTDEE = tdee.toString();
+    });
   }
 
   Widget _buildGenderDropdown() {
@@ -537,28 +673,33 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 8),
         if (_isEditing)
-          DropdownButtonFormField<String>(
-            value: _gender,
-            items: const [
-              DropdownMenuItem(value: 'Laki-laki', child: Text('Laki-laki')),
-              DropdownMenuItem(value: 'Perempuan', child: Text('Perempuan')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _gender = value ?? 'Laki-laki';
-                _calculateTDEE();
-              });
-            },
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: DropdownButton<String>(
+                value: _gender,
+                isExpanded: true,
+                underline: SizedBox(),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'Laki-laki',
+                    child: Text('Laki-laki'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Perempuan',
+                    child: Text('Perempuan'),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _gender = value ?? 'Laki-laki';
+                    _updateTDEEPreview();
+                  });
+                },
               ),
             ),
           )
@@ -569,6 +710,7 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
             ),
             child: Text(
               _gender,
@@ -587,6 +729,11 @@ class _ProfilePageState extends State<ProfilePage> {
       'very_active': 'Sangat Aktif (6-7 hari olahraga/minggu)',
     };
 
+    // Ensure _activityLevel is always valid
+    final validActivity = activityLabels.containsKey(_activityLevel)
+        ? _activityLevel
+        : 'sedentary';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -600,29 +747,29 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 8),
         if (_isEditing)
-          DropdownButtonFormField<String>(
-            value: _activityLevel,
-            items: activityLabels.entries
-                .map(
-                  (e) => DropdownMenuItem(value: e.key, child: Text(e.value)),
-                )
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                _activityLevel = value ?? 'sedentary';
-                _calculateTDEE();
-              });
-            },
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.grey.shade100,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: DropdownButton<String>(
+                value: validActivity,
+                isExpanded: true,
+                underline: SizedBox(),
+                items: activityLabels.entries
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _activityLevel = value ?? 'sedentary';
+                    _updateTDEEPreview();
+                  });
+                },
               ),
             ),
           )
@@ -633,6 +780,7 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
             ),
             child: Text(
               activityLabels[_activityLevel] ?? _activityLevel,

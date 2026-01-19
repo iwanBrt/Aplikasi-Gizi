@@ -238,7 +238,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         getTitlesWidget: (value, meta) {
                           return Text(
                             '${value.toInt()}',
-                            style: const TextStyle(fontSize: 10),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF424242),
+                            ),
                           );
                         },
                       ),
@@ -255,7 +259,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                 .split('-')[2];
                             return Text(
                               day,
-                              style: const TextStyle(fontSize: 10),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF424242),
+                              ),
                             );
                           }
                           return const SizedBox();
@@ -272,11 +280,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         BarChartRodData(
                           toY: data.calories.toDouble(),
                           color: data.calories > data.target
-                              ? Colors.orange
-                              : const Color(0xFF2E7D32),
-                          width: 12,
+                              ? const Color(
+                                  0xFFE53935,
+                                ) // Merah terang untuk over target
+                              : const Color(
+                                  0xFF1976D2,
+                                ), // Biru terang untuk under target
+                          width: 14,
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(4),
+                            top: Radius.circular(6),
                           ),
                         ),
                       ],
@@ -296,26 +308,32 @@ class _StatisticsPageState extends State<StatisticsPage> {
               child: Row(
                 children: [
                   Container(
-                    width: 12,
-                    height: 12,
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2E7D32),
+                      color: const Color(0xFF1976D2),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('Dalam target'),
+                  const Text(
+                    'Dalam target',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(width: 24),
                   Container(
-                    width: 12,
-                    height: 12,
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.orange,
+                      color: const Color(0xFFE53935),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('Melebihi target'),
+                  const Text(
+                    'Melebihi target',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
             ),

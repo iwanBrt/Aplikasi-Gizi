@@ -158,7 +158,7 @@ class _FoodTrackingPageState extends State<FoodTrackingPage> {
       if (userId == null) return;
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'food_images/$userId/$timestamp.jpg';
+      final fileName = '$userId/$timestamp.jpg';
 
       // Read file as bytes
       final fileBytes = await image.readAsBytes();

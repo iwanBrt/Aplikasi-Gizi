@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/home/presentation/pages/home_page.dart';
 // PENTING: Import file env yang menyimpan kunci rahasia
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/constants/env.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
 
   // Inisialisasi Supabase menggunakan variabel dari file env.dart
   // Pastikan kamu sudah membuat file lib/core/constants/env.dart
@@ -77,8 +82,49 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // --- HALAMAN UTAMA ---
-      home: const LoginPage(),
+      // --- HALAMAN UTAMA - dengan Auth Gate untuk persistent login ---
+      home: const AuthGate(),
     );
+  }
+}
+
+// Widget untuk mengecek apakah user sudah login atau belum
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    // Tunggu sebentar untuk Supabase initialize
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (mounted) {
+      final session = Supabase.instance.client.auth.currentSession;
+      
+      if (session != null) {
+        // User sudah login, redirect ke HomePage
+        print('✅ User sudah login: ${session.user.email}');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => const HomePage(),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Tampilkan LoginPage sebagai default
+    return const LoginPage();
   }
 }

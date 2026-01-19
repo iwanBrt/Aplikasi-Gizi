@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
 
 class MacroNutrientRow extends StatelessWidget {
-  const MacroNutrientRow({Key? key}) : super(key: key);
+  final double proteinCurrent;
+  final double proteinTarget;
+  final double carbsCurrent;
+  final double carbsTarget;
+  final double fatCurrent;
+  final double fatTarget;
+
+  const MacroNutrientRow({
+    Key? key,
+    this.proteinCurrent = 0,
+    this.proteinTarget = 50,
+    this.carbsCurrent = 0,
+    this.carbsTarget = 250,
+    this.fatCurrent = 0,
+    this.fatTarget = 75,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,24 +48,24 @@ class MacroNutrientRow extends StatelessWidget {
               const SizedBox(height: 20),
               _buildMacroRow(
                 'Protein',
-                25.0,
-                50.0,
+                proteinCurrent,
+                proteinTarget,
                 Icons.fastfood,
                 const Color(0xFF4CAF50),
               ),
               const SizedBox(height: 18),
               _buildMacroRow(
                 'Karbohidrat',
-                180.0,
-                250.0,
+                carbsCurrent,
+                carbsTarget,
                 Icons.grain,
                 const Color(0xFFFF9800),
               ),
               const SizedBox(height: 18),
               _buildMacroRow(
                 'Lemak',
-                60.0,
-                75.0,
+                fatCurrent,
+                fatTarget,
                 Icons.opacity,
                 const Color(0xFFE91E63),
               ),

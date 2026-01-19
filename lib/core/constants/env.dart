@@ -1,10 +1,9 @@
-class Env {
-  // GANTI DENGAN URL DARI DASHBOARD SUPABASE KAMU
-  // Contoh: 'https://abcdefghijklm.supabase.co'
-  static const String supabaseUrl = 'https://dpmttemqdzxdeypbiojm.supabase.co/';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-  // GANTI DENGAN ANON KEY DARI DASHBOARD SUPABASE KAMU
-  // Contoh: 'eyJhGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-  static const String supabaseAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRwbXR0ZW1xZHp4ZGV5cGJpb2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2Njk2MTUsImV4cCI6MjA4NDI0NTYxNX0.zpd-ar_uDV8S49mK6r_n8eMb3JdyqiL5a9aGjtCqRuM';
+class Env {
+  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
+  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  
+  //static const String openRouterApiKey = "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";
 }
