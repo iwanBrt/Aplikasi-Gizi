@@ -382,550 +382,548 @@ class _HomePageState extends State<HomePage> {
         ),
         elevation: 6,
       ),
-      body: Expanded(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // HEADER
-              Container(
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [const Color(0xFF2E7D32), const Color(0xFF43A047)],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withOpacity(0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // HEADER
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [const Color(0xFF2E7D32), const Color(0xFF43A047)],
                 ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Halo, $_userName 👋",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 24,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              "Mari jaga kesehatan Anda",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.25),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.logout, color: Colors.white),
-                            onPressed: () async {
-                              await Supabase.instance.client.auth.signOut();
-                              if (mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginPage(),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    if (_isLoadingProfile)
-                      const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(28),
-                          child: Column(
-                            children: [
-                              SizedBox(height: 60),
-                              CircularProgressIndicator(),
-                              SizedBox(height: 16),
-                              Text('Memuat data profil...'),
-                              SizedBox(height: 60),
-                            ],
-                          ),
-                        ),
-                      )
-                    else if (_errorMessage != null)
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(28),
-                          child: Column(
-                            children: [
-                              const Icon(
-                                Icons.warning_rounded,
-                                color: Colors.orange,
-                                size: 40,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(_errorMessage!),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _fetchUserProfile,
-                                child: const Text('Coba Lagi'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      CalorieRingCard(
-                        current: _calorieToday,
-                        target: _targetCalorie,
-                      ),
-                  ],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-
-              // BODY
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 32,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MacroNutrientRow(
-                      proteinCurrent: _proteinToday,
-                      carbsCurrent: _carbsToday,
-                      fatCurrent: _fatToday,
-                    ),
-                    const SizedBox(height: 32),
-                    _buildWaterTracker(),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          // Push to FoodTrackingPage
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const FoodTrackingPage(),
-                            ),
-                          );
-                          // Refresh kalori setelah kembali
-                          Future.delayed(const Duration(milliseconds: 500), () {
-                            _refreshCalories();
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        label: const Text(
-                          'Catat Makanan',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_todayLogs.isNotEmpty) ...[
-                      const SizedBox(height: 32),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Riwayat Hari Ini',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            "Halo, $_userName 👋",
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.w700,
-                              fontSize: 22,
+                              fontSize: 24,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2E7D32).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${_todayLogs.length} makanan',
-                              style: const TextStyle(
-                                color: Color(0xFF2E7D32),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Mari jaga kesehatan Anda",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 15,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _todayLogs.length,
-                        itemBuilder: (context, index) {
-                          final log = _todayLogs[index];
-                          final foodName = log['food_name'] ?? 'Unknown';
-                          final calories = log['calories'] ?? 0;
-                          final protein = log['protein'] ?? 0;
-                          final carbs = log['carbs'] ?? 0;
-                          final fat = log['fat'] ?? 0;
-                          final imageUrl = log['image_url'];
-                          final id = log['id'];
-                          final mealType = log['meal_type'] ?? '';
-
-                          // Icon dan label untuk meal type
-                          IconData mealIcon;
-                          String mealLabel;
-                          Color mealColor;
-
-                          switch (mealType) {
-                            case 'breakfast':
-                              mealIcon = Icons.wb_sunny;
-                              mealLabel = 'Sarapan';
-                              mealColor = Colors.orange;
-                              break;
-                            case 'lunch':
-                              mealIcon = Icons.wb_sunny_outlined;
-                              mealLabel = 'Makan Siang';
-                              mealColor = Colors.amber;
-                              break;
-                            case 'dinner':
-                              mealIcon = Icons.nightlight_round;
-                              mealLabel = 'Makan Malam';
-                              mealColor = Colors.indigo;
-                              break;
-                            case 'snack':
-                              mealIcon = Icons.cookie;
-                              mealLabel = 'Cemilan';
-                              mealColor = Colors.pink;
-                              break;
-                            default:
-                              mealIcon = Icons.restaurant;
-                              mealLabel = 'Makanan';
-                              mealColor = Colors.grey;
-                          }
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white,
-                                  Colors.grey.shade50,
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.logout, color: Colors.white),
+                          onPressed: () async {
+                            await Supabase.instance.client.auth.signOut();
+                            if (mounted) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
                                 ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  if (_isLoadingProfile)
+                    const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(28),
+                        child: Column(
+                          children: [
+                            SizedBox(height: 60),
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Memuat data profil...'),
+                            SizedBox(height: 60),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (_errorMessage != null)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(28),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.warning_rounded,
+                              color: Colors.orange,
+                              size: 40,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(_errorMessage!),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _fetchUserProfile,
+                              child: const Text('Coba Lagi'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    CalorieRingCard(
+                      current: _calorieToday,
+                      target: _targetCalorie,
+                    ),
+                ],
+              ),
+            ),
+
+            // BODY
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 32,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MacroNutrientRow(
+                    proteinCurrent: _proteinToday,
+                    carbsCurrent: _carbsToday,
+                    fatCurrent: _fatToday,
+                  ),
+                  const SizedBox(height: 32),
+                  _buildWaterTracker(),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        // Push to FoodTrackingPage
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FoodTrackingPage(),
+                          ),
+                        );
+                        // Refresh kalori setelah kembali
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          _refreshCalories();
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: const Text(
+                        'Catat Makanan',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_todayLogs.isNotEmpty) ...[
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Riwayat Hari Ini',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2E7D32).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_todayLogs.length} makanan',
+                            style: const TextStyle(
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _todayLogs.length,
+                      itemBuilder: (context, index) {
+                        final log = _todayLogs[index];
+                        final foodName = log['food_name'] ?? 'Unknown';
+                        final calories = log['calories'] ?? 0;
+                        final protein = log['protein'] ?? 0;
+                        final carbs = log['carbs'] ?? 0;
+                        final fat = log['fat'] ?? 0;
+                        final imageUrl = log['image_url'];
+                        final id = log['id'];
+                        final mealType = log['meal_type'] ?? '';
+
+                        // Icon dan label untuk meal type
+                        IconData mealIcon;
+                        String mealLabel;
+                        Color mealColor;
+
+                        switch (mealType) {
+                          case 'breakfast':
+                            mealIcon = Icons.wb_sunny;
+                            mealLabel = 'Sarapan';
+                            mealColor = Colors.orange;
+                            break;
+                          case 'lunch':
+                            mealIcon = Icons.wb_sunny_outlined;
+                            mealLabel = 'Makan Siang';
+                            mealColor = Colors.amber;
+                            break;
+                          case 'dinner':
+                            mealIcon = Icons.nightlight_round;
+                            mealLabel = 'Makan Malam';
+                            mealColor = Colors.indigo;
+                            break;
+                          case 'snack':
+                            mealIcon = Icons.cookie;
+                            mealLabel = 'Cemilan';
+                            mealColor = Colors.pink;
+                            break;
+                          default:
+                            mealIcon = Icons.restaurant;
+                            mealLabel = 'Makanan';
+                            mealColor = Colors.grey;
+                        }
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.white,
+                                Colors.grey.shade50,
                               ],
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Header dengan meal type dan delete button
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: mealColor.withOpacity(0.1),
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: mealColor.withOpacity(0.2),
-                                          width: 1,
-                                        ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header dengan meal type dan delete button
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: mealColor.withOpacity(0.1),
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: mealColor.withOpacity(0.2),
+                                        width: 1,
                                       ),
                                     ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          mealIcon,
-                                          size: 18,
-                                          color: mealColor,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          mealLabel,
-                                          style: TextStyle(
-                                            color: mealColor,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const Spacer(),
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.shade50,
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.delete_outline,
-                                              color: Colors.red.shade400,
-                                              size: 20,
-                                            ),
-                                            padding: const EdgeInsets.all(8),
-                                            constraints: const BoxConstraints(),
-                                            onPressed: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (BuildContext dialogContext) {
-                                                  return AlertDialog(
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(20),
-                                                    ),
-                                                    title: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.warning_amber_rounded,
-                                                          color: Colors.orange.shade400,
-                                                        ),
-                                                        const SizedBox(width: 12),
-                                                        const Text('Hapus Makanan?'),
-                                                      ],
-                                                    ),
-                                                    content: Text(
-                                                      'Yakin ingin menghapus "$foodName"?',
-                                                      style: const TextStyle(
-                                                        fontSize: 15,
-                                                      ),
-                                                    ),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(dialogContext),
-                                                        style: TextButton.styleFrom(
-                                                          foregroundColor: Colors.grey.shade700,
-                                                        ),
-                                                        child: const Text('Batal'),
-                                                      ),
-                                                      ElevatedButton(
-                                                        onPressed: () {
-                                                          Navigator.pop(dialogContext);
-                                                          _deleteLog(id);
-                                                        },
-                                                        style: ElevatedButton.styleFrom(
-                                                          backgroundColor: Colors.red,
-                                                          foregroundColor: Colors.white,
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(10),
-                                                          ),
-                                                        ),
-                                                        child: const Text('Hapus'),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ),
-
-                                  // Content dengan foto (jika ada)
-                                  Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Foto makanan (jika ada)
-                                        if (imageUrl != null &&
-                                            imageUrl.toString().isNotEmpty)
-                                          Container(
-                                            margin: const EdgeInsets.only(right: 16),
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Image.network(
-                                                imageUrl.toString(),
-                                                width: 90,
-                                                height: 90,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return Container(
-                                                    width: 90,
-                                                    height: 90,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.grey.shade200,
-                                                      borderRadius:
-                                                          BorderRadius.circular(12),
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.image_not_supported,
-                                                      color: Colors.grey.shade400,
-                                                      size: 32,
-                                                    ),
-                                                  );
-                                                },
-                                                loadingBuilder: (context, child, loadingProgress) {
-                                                  if (loadingProgress == null) return child;
-                                                  return Container(
-                                                    width: 90,
-                                                    height: 90,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.grey.shade200,
-                                                      borderRadius:
-                                                          BorderRadius.circular(12),
-                                                    ),
-                                                    child: Center(
-                                                      child: CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        color: const Color(0xFF2E7D32),
-                                                        value: loadingProgress
-                                                                    .expectedTotalBytes !=
-                                                                null
-                                                            ? loadingProgress
-                                                                    .cumulativeBytesLoaded /
-                                                                loadingProgress
-                                                                    .expectedTotalBytes!
-                                                            : null,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        mealIcon,
+                                        size: 18,
+                                        color: mealColor,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        mealLabel,
+                                        style: TextStyle(
+                                          color: mealColor,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red.shade400,
+                                            size: 20,
                                           ),
-
-                                        // Info makanan
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              // Nama makanan
-                                              Text(
-                                                foodName,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 17,
-                                                  color: Color(0xFF1A1A1A),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 10),
-
-                                              // Kalori dengan icon
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 6,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    colors: [
-                                                      const Color(0xFF2E7D32),
-                                                      const Color(0xFF43A047),
+                                          padding: const EdgeInsets.all(8),
+                                          constraints: const BoxConstraints(),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext dialogContext) {
+                                                return AlertDialog(
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(20),
+                                                  ),
+                                                  title: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.warning_amber_rounded,
+                                                        color: Colors.orange.shade400,
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      const Text('Hapus Makanan?'),
                                                     ],
                                                   ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(
-                                                      Icons.local_fire_department,
-                                                      size: 16,
-                                                      color: Colors.white,
+                                                  content: Text(
+                                                    'Yakin ingin menghapus "$foodName"?',
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
                                                     ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      '$calories kal',
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.w700,
-                                                        fontSize: 14,
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(dialogContext),
+                                                      style: TextButton.styleFrom(
+                                                        foregroundColor: Colors.grey.shade700,
                                                       ),
+                                                      child: const Text('Batal'),
+                                                    ),
+                                                    ElevatedButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(dialogContext);
+                                                        _deleteLog(id);
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.red,
+                                                        foregroundColor: Colors.white,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(10),
+                                                        ),
+                                                      ),
+                                                      child: const Text('Hapus'),
                                                     ),
                                                   ],
-                                                ),
-                                              ),
-                                              const SizedBox(height: 12),
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
 
-                                              // Nutrisi lain
-                                              Wrap(
-                                                spacing: 8,
-                                                runSpacing: 6,
+                                // Content dengan foto (jika ada)
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Foto makanan (jika ada)
+                                      if (imageUrl != null &&
+                                          imageUrl.toString().isNotEmpty)
+                                        Container(
+                                          margin: const EdgeInsets.only(right: 16),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Image.network(
+                                              imageUrl.toString(),
+                                              width: 90,
+                                              height: 90,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return Container(
+                                                  width: 90,
+                                                  height: 90,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade200,
+                                                    borderRadius:
+                                                        BorderRadius.circular(12),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    color: Colors.grey.shade400,
+                                                    size: 32,
+                                                  ),
+                                                );
+                                              },
+                                              loadingBuilder: (context, child, loadingProgress) {
+                                                if (loadingProgress == null) return child;
+                                                return Container(
+                                                  width: 90,
+                                                  height: 90,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade200,
+                                                    borderRadius:
+                                                        BorderRadius.circular(12),
+                                                  ),
+                                                  child: Center(
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: const Color(0xFF2E7D32),
+                                                      value: loadingProgress
+                                                                  .expectedTotalBytes !=
+                                                              null
+                                                          ? loadingProgress
+                                                                  .cumulativeBytesLoaded /
+                                                              loadingProgress
+                                                                  .expectedTotalBytes!
+                                                          : null,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ),
+
+                                      // Info makanan
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Nama makanan
+                                            Text(
+                                              foodName,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 17,
+                                                color: Color(0xFF1A1A1A),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 10),
+
+                                            // Kalori dengan icon
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    const Color(0xFF2E7D32),
+                                                    const Color(0xFF43A047),
+                                                  ],
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  _buildNutrientChip(
-                                                    icon: Icons.fitness_center,
-                                                    label: 'Protein',
-                                                    value: '${protein.toStringAsFixed(1)}g',
-                                                    color: Colors.blue,
+                                                  const Icon(
+                                                    Icons.local_fire_department,
+                                                    size: 16,
+                                                    color: Colors.white,
                                                   ),
-                                                  _buildNutrientChip(
-                                                    icon: Icons.grain,
-                                                    label: 'Karbo',
-                                                    value: '${carbs.toStringAsFixed(1)}g',
-                                                    color: Colors.orange,
-                                                  ),
-                                                  _buildNutrientChip(
-                                                    icon: Icons.water_drop,
-                                                    label: 'Lemak',
-                                                    value: '${fat.toStringAsFixed(1)}g',
-                                                    color: Colors.purple,
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    '$calories kal',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w700,
+                                                      fontSize: 14,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            const SizedBox(height: 12),
+
+                                            // Nutrisi lain
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 6,
+                                              children: [
+                                                _buildNutrientChip(
+                                                  icon: Icons.fitness_center,
+                                                  label: 'Protein',
+                                                  value: '${protein.toStringAsFixed(1)}g',
+                                                  color: Colors.blue,
+                                                ),
+                                                _buildNutrientChip(
+                                                  icon: Icons.grain,
+                                                  label: 'Karbo',
+                                                  value: '${carbs.toStringAsFixed(1)}g',
+                                                  color: Colors.orange,
+                                                ),
+                                                _buildNutrientChip(
+                                                  icon: Icons.water_drop,
+                                                  label: 'Lemak',
+                                                  value: '${fat.toStringAsFixed(1)}g',
+                                                  color: Colors.purple,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ] else
-                      const SizedBox(height: 32),
-                  ],
-                ),
+                          ),
+                        );
+                      },
+                    ),
+                  ] else
+                    const SizedBox(height: 32),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
 
