@@ -264,10 +264,9 @@ class _HomePageState extends State<HomePage> {
     print('🔴 Current _calorieToday: $_calorieToday');
     
     try {
-      // Optimistic update - hapus dari UI dulu
       if (mounted) {
         setState(() {
-          // Cari dan hapus dari list
+         
           final deletedLog = _todayLogs.firstWhere(
             (log) => log['id'] == id,
             orElse: () => {},
